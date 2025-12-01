@@ -1,6 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CodersLairDev\ClFw\DI\Trait;
+
+use CodersLairDev\ClFw\DI\Exception\ClFwDiLoadClassException;
 
 trait ServiceDirIteratorTrait
 {
@@ -12,8 +16,8 @@ trait ServiceDirIteratorTrait
      * @param string $namespace
      * @param string $path
      * @return \ReflectionClass[]
-     * 
-     * @throws \CodersLairDev\ClFw\DI\Exception\ClFwLoadClassException
+     *
+     * @throws ClFwDiLoadClassException
      */
     private function iterateDirRecursive(string $namespace, string $path): array
     {
