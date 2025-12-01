@@ -1,8 +1,8 @@
 <?php
 
-namespace CodersLairDev\ClFw\DI\Exception;
+declare(strict_types=1);
 
-use CodersLairDev\ClFw\DI\Exception\ClFwExceptionInterface;
+namespace CodersLairDev\ClFw\DI\Exception;
 
 class ClFwDiLoadClassException extends \ReflectionException implements ClFwExceptionInterface
 {

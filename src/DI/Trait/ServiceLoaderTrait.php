@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace CodersLairDev\ClFw\DI\Trait;
 
 
+use CodersLairDev\ClFw\DI\Exception\ClFwDiInitWithConstructorException;
 use CodersLairDev\ClFw\DI\Exception\ClFwDiInitWithEmptyConstructorException;
 
 trait ServiceLoaderTrait
@@ -17,6 +18,9 @@ trait ServiceLoaderTrait
      * @param array $pathData
      * @param array $allServices
      * @return array
+     *
+     * @throws ClFwDiInitWithConstructorException
+     * @throws ClFwDiInitWithEmptyConstructorException
      */
     protected function loadServices(string $projectDir, array $pathData, array $allServices): array
     {
@@ -37,15 +41,45 @@ trait ServiceLoaderTrait
             path: $path
         );
 
-        $services = $this->initWithEmptyConstructors($servicesReflections);
+        /**
+         * We create service instances with not declared constructors
+         * or with constructors without any parameters (i.g. without dependencies).
+         * For now, we can create only these objects (services).
+         * Later, they will be used for dependency injection into other services
+         * with declared constructors and dependencies.
+         *
+         * Создаём сервисы с пустыми/отсутствующими конструкторами.
+         * Сейчас мы можем создать только их. В дальнейшем они будут использоваться
+         * при внедрении зависимостей в другие сервисы с зависимостями в конструкторе.
+         */
+        $services = $this->instantiateWithEmptyConstructors($servicesReflections);
 
+        /**
+         * Total number of \ReflectionClass objects created
+         * Общее количество созданных объектов \ReflectionClass
+         */
         $reflectionsAmount = count($servicesReflections);
+
+        /**
+         * Number of services already instantiated at this point
+         *
+         * Количество инстанциированных сервисов к этому моменту
+         */
         $servicesAmount = count($services);
 
+        /**
+         * If there are fewer instantiated services, it means that there are services with declared dependencies
+         * in constructors and they also need to be instantiated with dependency injection
+         * from existing previously created/instantified objects.
+         *
+         * Если созданных сервисов меньше, значит,
+         * имеются сервисы с объявленными зависимостями в конструкторах
+         * и их тоже нужно создать с внедрением зависимостей
+         * из имеющихся созданных/инстанциированных объектов ранее.
+         */
         while ($reflectionsAmount > $servicesAmount) {
-            /** @var \ReflectionClass $reflection */
             foreach ($servicesReflections as $reflection) {
-                $this->initWithConstructor($reflection, $services, $allServices);
+                $this->instantiateWithConstructor($reflection, $services, $allServices);
             }
 
             $servicesAmount = count($services);
@@ -55,6 +89,10 @@ trait ServiceLoaderTrait
     }
 
     /**
+     * Creates a service with a constructor without parameters (or with an undeclared constructor)
+     *
+     * Создаёт сервис с конструктором без параметров (или с не объявленным конструктором)
+     *
      * @param \ReflectionClass[] $reflections
      * @return array
      *
@@ -79,6 +117,18 @@ trait ServiceLoaderTrait
         return $services;
     }
 
+    /**
+     * Creates a service with a constructor with parameters (with dependencies injection)
+     *
+     * Создаёт сервис с конструктором с зависимостями в конструкторе
+     *
+     * @param \ReflectionClass $reflection
+     * @param array $currentlyInstantiated
+     * @param array $allServices
+     * @return void
+     *
+     * @throws ClFwDiInitWithConstructorException
+     */
     private function instantiateWithConstructor(
         \ReflectionClass $reflection,
         array &$currentlyInstantiated,
@@ -113,7 +163,11 @@ trait ServiceLoaderTrait
         }
 
         if (count($parameters) == count($pInjections)) {
-            $currentlyInstantiated[$reflection->getName()] = $reflection->newInstanceArgs($pInjections);
+            try {
+                $currentlyInstantiated[$reflection->getName()] = $reflection->newInstanceArgs($pInjections);
+            } catch (\ReflectionException $e) {
+                throw new ClFwDiInitWithConstructorException($reflection->getName(), $e);
+            }
         }
     }
 }

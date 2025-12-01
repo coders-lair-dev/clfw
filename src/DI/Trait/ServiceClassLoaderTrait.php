@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CodersLairDev\ClFw\DI\Trait;
 
+
 use CodersLairDev\ClFw\DI\Exception\ClFwDiLoadClassException;
-use CodersLairDev\ClFw\DI\Exception\ClFwLoadClassException;
 
 trait ServiceClassLoaderTrait
 {
@@ -18,7 +20,7 @@ trait ServiceClassLoaderTrait
      * @param string $namespace
      * @param string $fullPath
      * @return \ReflectionClass
-     * 
+     *
      * @throws ClFwDiLoadClassException
      */
     private function loadClass(string $namespace, string $fullPath): \ReflectionClass
