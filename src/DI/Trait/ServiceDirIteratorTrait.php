@@ -5,13 +5,15 @@ namespace CodersLairDev\ClFw\DI\Trait;
 trait ServiceDirIteratorTrait
 {
     use ServicePathTrait;
+    use ServiceNamespaceTrait;
+    use ServiceClassLoaderTrait;
 
     /**
      * @param string $namespace
      * @param string $path
-     * @return array
-     *
-     * @throws \ReflectionException
+     * @return \ReflectionClass[]
+     * 
+     * @throws \CodersLairDev\ClFw\DI\Exception\ClFwLoadClassException
      */
     private function iterateDirRecursive(string $namespace, string $path): array
     {
@@ -26,12 +28,18 @@ trait ServiceDirIteratorTrait
         foreach ($dirContent as $file) {
             $fullPath = $this->getPath($path, $file);
 
-            if ($this->isCurrentDir($fullPath) || $this->isParentDir($fullPath)) {
+            if ($this->isCurrentDir($file) || $this->isParentDir($file)) {
                 continue;
             }
 
             if (is_dir($fullPath)) {
-                $reflections[] = $this->iterateDirRecursive($namespace, pathinfo($fullPath, PATHINFO_DIRNAME));
+                $innerNamespace = $this->getNamespace($namespace, $file);
+                $reflections = [
+                    ...$reflections,
+                    ...$this->iterateDirRecursive($innerNamespace, $fullPath)
+                ];
+
+                continue;
             }
 
             if (!is_file($fullPath) || !$this->isClass($fullPath)) {
@@ -42,25 +50,5 @@ trait ServiceDirIteratorTrait
         }
 
         return $reflections;
-    }
-
-    private function isClass(string $fullPath): bool
-    {
-        $ext = pathinfo($fullPath, PATHINFO_EXTENSION);
-        return $ext === 'php';
-    }
-
-    /**
-     * @param string $namespace
-     * @param string $fullPath
-     * @return \ReflectionClass
-     *
-     * @throws \ReflectionException
-     */
-    private function loadClass(string $namespace, string $fullPath): \ReflectionClass
-    {
-        $fileName = pathinfo($fullPath, PATHINFO_FILENAME);
-        $className = $namespace . '\\' . $fileName;
-        return new \ReflectionClass($className);
     }
 }

@@ -11,6 +11,12 @@ class ServiceContainer
 {
     use ServiceLoaderTrait;
 
+    /**
+     * Contains all instantiated services (e.g. services, controllers etc.)
+     * Будет содержать все инстанциированные сервисы (например, сервисы, контроллеры и т.д.)
+     * 
+     * @var array 
+     */
     private array $services = [];
 
     public function __construct(
@@ -33,7 +39,7 @@ class ServiceContainer
                 ...$this->loadServices(
                     projectDir: $this->projectDir,
                     pathData: $servicePathData,
-                    _services: $this->services
+                    allServices: $this->services
                 )
             ];
         }

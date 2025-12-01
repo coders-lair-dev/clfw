@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace CodersLairDev\ClFw\DI\Trait;
 
 
+use CodersLairDev\ClFw\DI\Exception\ClFwDiInitWithEmptyConstructorException;
+
 trait ServiceLoaderTrait
 {
     use ServicePathTrait;
@@ -13,27 +15,27 @@ trait ServiceLoaderTrait
     /**
      * @param string $projectDir
      * @param array $pathData
-     * @param array $_services
+     * @param array $allServices
      * @return array
      */
-    protected function loadServices(string $projectDir, array $pathData, array $_services): array
+    protected function loadServices(string $projectDir, array $pathData, array $allServices): array
     {
         $path = $this->getPath(
             dir: $projectDir,
             path: $pathData['path']
         );
 
-        $iterator = $this->iterateDir(
+        /**
+         * We recursively go through all the directories specified in the configuration
+         * with services, controllers, etc. and create \ReflectionClass objects based on the classes found.
+         *
+         * Рекурсивно проходим по всем указанным в конфигурации каталогам с сервисами, контроллерами и т.д.
+         * и создаём на основе найденных классов объекты \ReflectionClass
+         */
+        $servicesReflections = $this->iterateDirRecursive(
             namespace: $pathData['namespace'],
             path: $path
         );
-
-        try {
-            $servicesReflections = $this->iterateDirRecursive($pathData['namespace'], $pathData['path']);
-        } catch (\ReflectionException $e) {
-            $k = 0;
-            throw $e;
-        }
 
         $services = $this->initWithEmptyConstructors($servicesReflections);
 
@@ -43,36 +45,7 @@ trait ServiceLoaderTrait
         while ($reflectionsAmount > $servicesAmount) {
             /** @var \ReflectionClass $reflection */
             foreach ($servicesReflections as $reflection) {
-                $constructor = $reflection->getConstructor();
-
-                if (is_null($constructor)) {
-                    continue;
-                }
-
-                $pInjections = [];
-                $parameters = $constructor->getParameters();
-                foreach ($parameters as $parameter) {
-                    $pType = $parameter->getType();
-                    if ($pType->isBuiltin()) {
-                        continue;
-                    }
-
-                    $pTypeName = $pType->getName();
-
-                    if (array_key_exists($pTypeName, $services)) {
-                        $pInjections[] = $services[$pTypeName];
-
-                        continue;
-                    }
-
-                    if (array_key_exists($pTypeName, $_services)) {
-                        $pInjections[] = $_services[$pTypeName];
-                    }
-                }
-
-                if (count($parameters) == count($pInjections)) {
-                    $services[$reflection->getName()] = $reflection->newInstanceArgs($pInjections);
-                }
+                $this->initWithConstructor($reflection, $services, $allServices);
             }
 
             $servicesAmount = count($services);
@@ -82,12 +55,12 @@ trait ServiceLoaderTrait
     }
 
     /**
-     * @param ReflectionClass[] $reflections
+     * @param \ReflectionClass[] $reflections
      * @return array
      *
-     * @throws ClFwInitWithEmptyConstructorException
+     * @throws ClFwDiInitWithEmptyConstructorException
      */
-    private function initWithEmptyConstructors(array $reflections):array
+    private function instantiateWithEmptyConstructors(array $reflections): array
     {
         $services = [];
 
@@ -98,7 +71,7 @@ trait ServiceLoaderTrait
                 try {
                     $services[$reflection->getName()] = $reflection->newInstanceWithoutConstructor();
                 } catch (\ReflectionException $e) {
-                    throw new ClFwInitWithEmptyConstructorException($reflection->getName(), $e);
+                    throw new ClFwDiInitWithEmptyConstructorException($reflection->getName(), $e);
                 }
             }
         }
@@ -106,29 +79,41 @@ trait ServiceLoaderTrait
         return $services;
     }
 
-    /**
-     * @param string $namespace
-     * @param string $path
-     * @return \Generator
-     *
-     * @throws \ReflectionException
-     */
-    private function iterateDir(string $namespace, string $path): \Generator
-    {
-        $dirContent = scandir($path);
+    private function instantiateWithConstructor(
+        \ReflectionClass $reflection,
+        array &$currentlyInstantiated,
+        array $allServices
+    ): void {
+        $constructor = $reflection->getConstructor();
 
-        if (!is_array($dirContent)) {
-            return null;
+        if (is_null($constructor)) {
+            return;
         }
 
-        foreach ($dirContent as $file) {
-            $fullPath = $path . DIRECTORY_SEPARATOR . $file;
+        $pInjections = [];
+        $parameters = $constructor->getParameters();
 
-            if (!is_file($fullPath) || !$this->isClass($fullPath)) {
+        foreach ($parameters as $parameter) {
+            $pType = $parameter->getType();
+            if ($pType->isBuiltin()) {
                 continue;
             }
 
-            yield $this->loadClass($namespace, $fullPath);
+            $pTypeName = $pType->getName();
+
+            if (array_key_exists($pTypeName, $currentlyInstantiated)) {
+                $pInjections[] = $currentlyInstantiated[$pTypeName];
+
+                continue;
+            }
+
+            if (array_key_exists($pTypeName, $allServices)) {
+                $pInjections[] = $allServices[$pTypeName];
+            }
+        }
+
+        if (count($parameters) == count($pInjections)) {
+            $currentlyInstantiated[$reflection->getName()] = $reflection->newInstanceArgs($pInjections);
         }
     }
 }

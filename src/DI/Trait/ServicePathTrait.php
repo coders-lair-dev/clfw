@@ -9,13 +9,13 @@ trait ServicePathTrait
         return $dir . DIRECTORY_SEPARATOR . $path;
     }
 
-    private function isCurrentDir(string $path): bool
+    private function isCurrentDir(string $file): bool
     {
-        return $path == '.';
+        return $file == '.';
     }
 
-    private function isParentDir(string $path): bool
+    private function isParentDir(string $file): bool
     {
-        return $path == '..';
+        return $file == '..';
     }
 }
