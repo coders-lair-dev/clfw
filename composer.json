@@ -1,0 +1,17 @@
+{
+    "name": "coderslairdev/clfw",
+    "description": "Simple framework implementation for pure PHP",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "CodersLairDev\\ClFw\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Coder's Lair"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {}
+}
