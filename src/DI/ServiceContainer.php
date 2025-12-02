@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace CodersLairDev\ClFw\DI;
 
 
+use CodersLairDev\ClFw\DI\Exception\ClFwDiInsufficientOrWrongMethodArgumentsException;
+use CodersLairDev\ClFw\DI\Exception\ClFwExceptionInterface;
 use CodersLairDev\ClFw\DI\Trait\ServiceLoaderTrait;
 
 class ServiceContainer
@@ -12,12 +14,15 @@ class ServiceContainer
     use ServiceLoaderTrait;
 
     /**
-     * Contains all instantiated services (e.g. services, controllers etc.)
-     * Будет содержать все инстанциированные сервисы (например, сервисы, контроллеры и т.д.)
-     * 
-     * @var array 
+     * Contains all instantiated objects (e.g. services, controllers etc.)
+     *
+     * Будет содержать все созданные объекты (например, сервисы, контроллеры и т.д.)
+     *
+     * @var array
      */
     private array $services = [];
+
+    private ServiceInvoker $serviceInvoker;
 
     public function __construct(
         private readonly string $projectDir,
@@ -28,11 +33,12 @@ class ServiceContainer
     /**
      * @return void
      *
-     * @throws \ReflectionException
+     * @throws ClFwExceptionInterface
      */
     public function init(): void
     {
         $servicesPaths = $this->config['services'] ?? [];
+
         foreach ($servicesPaths as $servicePathData) {
             $this->services = [
                 ...$this->services,
@@ -43,10 +49,32 @@ class ServiceContainer
                 )
             ];
         }
+
+        $this->serviceInvoker = new ServiceInvoker($this->services);
     }
 
-    public function getControllers(): array
+    public function getServices(): array
     {
-        return [];
+        return $this->services;
+    }
+
+    /**
+     * @param string $className
+     * @return object
+     *
+     * @throws ClFwDiInsufficientOrWrongMethodArgumentsException
+     */
+    public function getService(string $className): object
+    {
+        if (!isset($this->services[$className])) {
+            throw new ClFwDiInsufficientOrWrongMethodArgumentsException($className);
+        }
+
+        return $this->services[$className];
+    }
+
+    public function getServiceInvoker(): ServiceInvoker
+    {
+        return $this->serviceInvoker;
     }
 }
