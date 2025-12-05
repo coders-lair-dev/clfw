@@ -7,11 +7,13 @@ namespace CodersLairDev\ClFw\DI\Trait;
 
 use CodersLairDev\ClFw\DI\Exception\ClFwDiInitWithConstructorException;
 use CodersLairDev\ClFw\DI\Exception\ClFwDiInitWithEmptyConstructorException;
+use CodersLairDev\ClFw\DI\Exception\ClFwDiLoadClassException;
 
 trait ServiceLoaderTrait
 {
-    use ServicePathTrait;
-    use ServiceDirIteratorTrait;
+    use PathTrait;
+    use DirIteratorTrait;
+    use InjectablesTrait;
 
     /**
      * @param string $projectDir
@@ -21,6 +23,7 @@ trait ServiceLoaderTrait
      *
      * @throws ClFwDiInitWithConstructorException
      * @throws ClFwDiInitWithEmptyConstructorException
+     * @throws ClFwDiLoadClassException
      */
     protected function loadServices(string $projectDir, array $pathData, array $allServices): array
     {
@@ -140,31 +143,19 @@ trait ServiceLoaderTrait
             return;
         }
 
-        $pInjections = [];
         $parameters = $constructor->getParameters();
 
-        foreach ($parameters as $parameter) {
-            $pType = $parameter->getType();
-            if ($pType->isBuiltin()) {
-                continue;
-            }
+        $injectables = $this->getInjectables(
+            parameters: $parameters,
+            instantiatedServices: [
+                ...$allServices,
+                ...$currentlyInstantiated
+            ]
+        );
 
-            $pTypeName = $pType->getName();
-
-            if (array_key_exists($pTypeName, $currentlyInstantiated)) {
-                $pInjections[] = $currentlyInstantiated[$pTypeName];
-
-                continue;
-            }
-
-            if (array_key_exists($pTypeName, $allServices)) {
-                $pInjections[] = $allServices[$pTypeName];
-            }
-        }
-
-        if (count($parameters) == count($pInjections)) {
+        if (count($parameters) == count($injectables)) {
             try {
-                $currentlyInstantiated[$reflection->getName()] = $reflection->newInstanceArgs($pInjections);
+                $currentlyInstantiated[$reflection->getName()] = $reflection->newInstanceArgs($injectables);
             } catch (\ReflectionException $e) {
                 throw new ClFwDiInitWithConstructorException($reflection->getName(), $e);
             }

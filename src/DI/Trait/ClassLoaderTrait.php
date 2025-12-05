@@ -7,7 +7,7 @@ namespace CodersLairDev\ClFw\DI\Trait;
 
 use CodersLairDev\ClFw\DI\Exception\ClFwDiLoadClassException;
 
-trait ServiceClassLoaderTrait
+trait ClassLoaderTrait
 {
     private const PHP_CLASS_EXTENSION = 'php';
 

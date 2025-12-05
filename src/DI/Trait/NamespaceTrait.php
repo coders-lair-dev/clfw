@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace CodersLairDev\ClFw\DI\Trait;
 
-trait ServiceNamespaceTrait
+trait NamespaceTrait
 {
     private const NAMESPACE_SEPARATOR = '\\';
 

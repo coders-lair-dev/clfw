@@ -5,3 +5,4 @@
 /dev/
 /.idea/
 /src.local/
+/composer.lock

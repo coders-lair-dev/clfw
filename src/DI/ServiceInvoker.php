@@ -7,9 +7,12 @@ namespace CodersLairDev\ClFw\DI;
 use CodersLairDev\ClFw\DI\Exception\ClFwDiInsufficientOrWrongMethodArgumentsException;
 use CodersLairDev\ClFw\DI\Exception\ClFwDiMethodNotExistsException;
 use CodersLairDev\ClFw\DI\Exception\ClFwDiNotExistsException;
+use CodersLairDev\ClFw\DI\Trait\InjectablesTrait;
 
 final readonly class ServiceInvoker
 {
+    use InjectablesTrait;
+
     public function __construct(private array $services)
     {
     }
@@ -53,6 +56,19 @@ final readonly class ServiceInvoker
             }
 
             $additionalObjectsByType[$reflection->getName()] = $additionalObject;
+
+            foreach ($reflection->getInterfaceNames() as $interfaceName) {
+                /**
+                 * If an additional object implements some interfaces,
+                 * then we include the object in the list of objects for dependency injection
+                 * in the form of all implemented interfaces
+                 *
+                 * Если дополнительным объектом реализуются какие-то интерфейсы,
+                 * то включаем объект в список объектов для инъекций зависимости
+                 * в виде всех реализуемых интерфейсов
+                 */
+                $additionalObjectsByType[$interfaceName] = $additionalObject;
+            }
         }
 
         $reflection = new \ReflectionClass($service);
@@ -62,28 +78,16 @@ final readonly class ServiceInvoker
         } catch (\ReflectionException $e) {
             throw new ClFwDiMethodNotExistsException($method, $reflection->getName(), $e);
         }
+
         $parameters = $method->getParameters();
 
-        $methodParameters = [];
-
-        foreach ($parameters as $parameter) {
-            $pType = $parameter->getType();
-            if ($pType->isBuiltin()) {
-                continue;
-            }
-
-            $pTypeName = $pType->getName();
-
-            if (array_key_exists($pTypeName, $this->services)) {
-                $methodParameters[] = $this->services[$pType->getName()];
-
-                continue;
-            }
-
-            if (array_key_exists($pTypeName, $additionalObjectsByType)) {
-                $methodParameters[] = $additionalObjectsByType[$pTypeName];
-            }
-        }
+        $methodParameters = $this->getInjectables(
+            parameters: $parameters,
+            instantiatedServices: [
+                ...$this->services,
+                ...$additionalObjectsByType
+            ]
+        );
 
         if (count($parameters) == count($methodParameters)) {
             return $methodParameters;
