@@ -6,6 +6,7 @@ namespace CodersLairDev\ClFw\DI;
 
 
 use CodersLairDev\ClFw\DI\Exception\ClFwDiInsufficientOrWrongMethodArgumentsException;
+use CodersLairDev\ClFw\DI\Exception\ClFwDiNotImplementedServiceException;
 use CodersLairDev\ClFw\DI\Exception\ClFwExceptionInterface;
 use CodersLairDev\ClFw\DI\Trait\ServiceLoaderTrait;
 
@@ -62,12 +63,12 @@ class ServiceContainer
      * @param string $className
      * @return object
      *
-     * @throws ClFwDiInsufficientOrWrongMethodArgumentsException
+     * @throws ClFwDiNotImplementedServiceException
      */
     public function getService(string $className): object
     {
         if (!isset($this->services[$className])) {
-            throw new ClFwDiInsufficientOrWrongMethodArgumentsException($className);
+            throw new ClFwDiNotImplementedServiceException($className);
         }
 
         return $this->services[$className];

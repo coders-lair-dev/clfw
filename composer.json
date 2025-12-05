@@ -12,6 +12,8 @@
             "name": "Coder's Lair"
         }
     ],
-    "minimum-stability": "dev",
-    "require": {}
+    "minimum-stability": "stable",
+    "require": {
+        "nyholm/psr7": "^1.8"
+    }
 }

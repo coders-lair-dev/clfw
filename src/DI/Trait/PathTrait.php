@@ -2,7 +2,7 @@
 
 namespace CodersLairDev\ClFw\DI\Trait;
 
-trait ServicePathTrait
+trait PathTrait
 {
     private function getPath(string $dir, string $path): string
     {

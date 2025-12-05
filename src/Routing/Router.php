@@ -2,16 +2,14 @@
 
 namespace CodersLairDev\ClFw\Routing;
 
-use CodersLairDev\ClFw\Http\Request\Request;
 use CodersLairDev\ClFw\Routing\Attribute\AsController;
 use CodersLairDev\ClFw\Routing\Attribute\AsRoute;
-use CodersLairDev\ClFw\Routing\Trait\RequestUriTrait;
 use CodersLairDev\ClFw\Routing\Trait\RouteTrait;
+use Psr\Http\Message\ServerRequestInterface;
 
 class Router
 {
     use RouteTrait;
-    use RequestUriTrait;
 
     private array $routes = [];
 
@@ -53,11 +51,9 @@ class Router
         return !empty($reflection->getAttributes(AsController::class));
     }
 
-    public function findRoute(Request $request): ?Route
+    public function findRoute(ServerRequestInterface $request): ?Route
     {
-        $uri = $this->getRequestUri($request);
-
-        return $this->routes[$uri] ?? null;
+        return $this->routes[$request->getUri()->getPath()] ?? null;
     }
 
     public function getRoutes(): array

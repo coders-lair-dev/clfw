@@ -6,11 +6,11 @@ namespace CodersLairDev\ClFw\DI\Trait;
 
 use CodersLairDev\ClFw\DI\Exception\ClFwDiLoadClassException;
 
-trait ServiceDirIteratorTrait
+trait DirIteratorTrait
 {
-    use ServicePathTrait;
-    use ServiceNamespaceTrait;
-    use ServiceClassLoaderTrait;
+    use PathTrait;
+    use NamespaceTrait;
+    use ClassLoaderTrait;
 
     /**
      * @param string $namespace
