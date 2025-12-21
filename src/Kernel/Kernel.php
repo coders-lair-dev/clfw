@@ -50,7 +50,7 @@ final class Kernel
         );
     }
 
-    public function handle(ServerRequestInterface $preparedRequest = null): void
+    public function handle(?ServerRequestInterface $preparedRequest, bool $shouldReturnResponse = false): ?ResponseInterface
     {
         $request = empty($preparedRequest) ? $this->requestCreator->fromGlobals() : $preparedRequest;
 
@@ -63,9 +63,13 @@ final class Kernel
                 status: 404
             );
 
+            if ($shouldReturnResponse) {
+                return $response;
+            }
+
             $this->sendResponse($response);
 
-            return;
+            return null;
         }
 
         try {
