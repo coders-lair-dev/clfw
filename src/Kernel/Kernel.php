@@ -50,8 +50,10 @@ final class Kernel
         );
     }
 
-    public function handle(?ServerRequestInterface $preparedRequest, bool $shouldReturnResponse = false): ?ResponseInterface
-    {
+    public function handle(
+        ?ServerRequestInterface $preparedRequest,
+        bool $shouldReturnResponse = false
+    ): ?ResponseInterface {
         $request = empty($preparedRequest) ? $this->requestCreator->fromGlobals() : $preparedRequest;
 
         $route = $this->router->findRoute($request);
@@ -87,15 +89,23 @@ final class Kernel
                 status: $e->getCode()
             );
 
+            if ($shouldReturnResponse) {
+                return $response;
+            }
+
             $this->sendResponse($response);
 
-            return;
+            return null;
         }
 
         if ($invokeResult instanceof ResponseInterface) {
+            if ($shouldReturnResponse) {
+                return $invokeResult;
+            }
+
             $this->sendResponse($invokeResult);
 
-            return;
+            return null;
         }
 
         $response = $this->createJsonResponse(
@@ -104,7 +114,13 @@ final class Kernel
             status: 200
         );
 
+        if ($shouldReturnResponse) {
+            return $response;
+        }
+
         $this->sendResponse($response);
+
+        return null;
     }
 
     private function sendResponse(ResponseInterface $response): void
