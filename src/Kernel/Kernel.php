@@ -13,6 +13,7 @@ use CodersLairDev\ClFw\Routing\Router;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7Server\ServerRequestCreator;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 final class Kernel
 {
@@ -49,9 +50,9 @@ final class Kernel
         );
     }
 
-    public function handle(): void
+    public function handle(ServerRequestInterface $preparedRequest = null): void
     {
-        $request = $this->requestCreator->fromGlobals();
+        $request = empty($preparedRequest) ? $this->requestCreator->fromGlobals() : $preparedRequest;
 
         $route = $this->router->findRoute($request);
 
