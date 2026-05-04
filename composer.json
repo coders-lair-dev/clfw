@@ -2,18 +2,23 @@
     "name": "coderslairdev/clfw",
     "description": "Simple framework implementation for pure PHP",
     "type": "library",
+    "license": "MIT",
+    "keywords": ["framework", "micro-framework", "psr-7"],
+    "homepage": "https://coders-lair.com",
+    "authors": [
+        {
+            "name": "Coder's Lair",
+            "homepage": "https://coders-lair.com"
+        }
+    ],
     "autoload": {
         "psr-4": {
             "CodersLairDev\\ClFw\\": "src/"
         }
     },
-    "authors": [
-        {
-            "name": "Coder's Lair"
-        }
-    ],
     "minimum-stability": "stable",
     "require": {
+        "php": ">=8.2",
         "psr/http-message": "^2.0",
         "nyholm/psr7": "^1.8",
         "nyholm/psr7-server": "^1.1"
