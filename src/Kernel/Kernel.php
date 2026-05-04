@@ -8,6 +8,7 @@ use CodersLairDev\ClFw\DI\Exception\ClFwDiNotExistsException;
 use CodersLairDev\ClFw\DI\Exception\ClFwDiNotImplementedServiceException;
 use CodersLairDev\ClFw\DI\Exception\ClFwExceptionInterface;
 use CodersLairDev\ClFw\DI\ServiceContainer;
+use CodersLairDev\ClFw\Http\Middleware\MiddlewarePipeline;
 use CodersLairDev\ClFw\Http\Response\Trait\ResponseTrait;
 use CodersLairDev\ClFw\Routing\Route;
 use CodersLairDev\ClFw\Routing\Router;
@@ -23,6 +24,7 @@ final class Kernel
     private ServerRequestCreator $requestCreator;
     private ServiceContainer $serviceContainer;
     private Router $router;
+    private MiddlewarePipeline $pipeline;
     private Psr17Factory $psr17Factory;
 
     /**
@@ -41,6 +43,8 @@ final class Kernel
         $this->router = new Router();
         $this->router->collectRoutes($this->serviceContainer->getServices());
 
+        $this->pipeline = $this->serviceContainer->getService(MiddlewarePipeline::class);
+
         $this->psr17Factory = new Psr17Factory();
 
         $this->requestCreator = new ServerRequestCreator(
@@ -53,7 +57,7 @@ final class Kernel
 
     /**
      * Prepare and send response - Front Controller
-     * Формирует response и отправляет его — Front Controller
+     * Формирует response и отправляет его - Front Controller
      */
     public function run(?ServerRequestInterface $preparedRequest = null): void
     {
@@ -65,9 +69,17 @@ final class Kernel
     {
         $request = $preparedRequest ?? $this->requestCreator->fromGlobals();
 
+        return $this->pipeline->handle(
+            request: $request,
+            finalHandler: fn(ServerRequestInterface $req): ResponseInterface => $this->dispatch($req)
+        );
+    }
+
+    private function dispatch(ServerRequestInterface $request): ResponseInterface
+    {
         $route = $this->resolveRoute($request);
 
-        if ($route === null) {
+        if (is_null($route)) {
             return $this->createNotFoundResponse();
         }
 
