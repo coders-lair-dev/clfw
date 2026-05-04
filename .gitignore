@@ -6,3 +6,6 @@
 /.idea/
 /src.local/
 /composer.lock
+
+*.zip
+*.log
