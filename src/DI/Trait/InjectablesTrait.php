@@ -15,17 +15,14 @@ trait InjectablesTrait
 
         foreach ($parameters as $parameter) {
             $pType = $parameter->getType();
-            if ($pType->isBuiltin()) {
+
+            if (!$pType instanceof \ReflectionNamedType || $pType->isBuiltin()) {
                 continue;
             }
 
-            $pTypeName = $pType->getName();
-
-            if (array_key_exists($pTypeName, $instantiatedServices)) {
-                $injectables[] = $instantiatedServices[$pTypeName];
-            }
+            $injectables[] = $instantiatedServices[$pType->getName()] ?? null;
         }
 
-        return $injectables;
+        return array_filter($injectables, static fn($s) => $s !== null);
     }
 }
